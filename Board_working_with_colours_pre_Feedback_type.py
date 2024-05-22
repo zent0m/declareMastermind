@@ -5,6 +5,7 @@ import copy
 
 def clearScreen():
     os.system('cls')
+    #lollmao
 
 #Make str that won't be changed immutable using Final (Rules & Menu)
 welcomeMessage: Final[str] = """ Welcome to 
