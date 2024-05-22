@@ -5,7 +5,7 @@ import copy
 from dataclasses import dataclass
 
 #Make str that won't be changed immutable using Final (Rules & Menu)
-welcomeMessage: Final[str] = """ Welcome to 
+welcomeMessage: Final[str] = """\nWelcome to...
    _____                   __                       .__            .___
   /     \ _____    _______/  |_  ___________  _____ |__| ____    __| _/
  /  \ /  \\__  \  /  ___/\   __\/ __ \_  __ \/     \|  |/    \  / __ | 
@@ -18,12 +18,12 @@ def clearScreen():
     os.system('cls')
 
 rules : Final[str] = """
-1. The game starts with the codemaker creating a code out of a sequence of 4 
-colours [red, green, blue, yellow, orange, purple, indigo, violet]
+1. The game starts with the codemaker creating a 4 color code out of a sequence of 8 
+   colours: red, green, blue, yellow, orange, purple, indigo and violet
 2. The codebreaker then attempts a series of guesses to crack the code
 3. After each guess feedback is given next to the guess where:
-    Black means they have a correct colour in the correct position
-    White means they have a correct colour in the incorrect position
+   Black means they have a correct colour in the correct position
+   White means they have a correct colour in the incorrect position
 4. The codebreaker gets 10 attempts to guess the code
 5. If the codebreaker correctly guesses the code they win
 6. If after 10 guesses the codebreaker hasn't guessed the code the codemaker wins
@@ -161,9 +161,9 @@ class Feedback(Enum):
 
 # Predefined Campaign Codes as Pattern Objects
 CampaignCodes = [Pattern(Colour.red,Colour.green,Colour.blue,Colour.yellow),
-                Pattern(Colour.orange,Colour.purple,Colour.orange,Colour.violet),
+                Pattern(Colour.orange,Colour.purple,Colour.blue,Colour.violet),
                 Pattern(Colour.blue,Colour.indigo,Colour.purple,Colour.green),
-                Pattern(Colour.red,Colour.red,Colour.red,Colour.red)]
+                Pattern(Colour.purple,Colour.indigo,Colour.green,Colour.yellow)]
 
 # Fuction to output gameboard as game progresses
 # "get it to generate the string and return it, then print out separately" -E.C.
@@ -180,15 +180,15 @@ def Generateboard(feedback : list[Feedback], guess:Pattern) -> str:
     return displayBoard(board)
 
 def displayBoard(board) -> str:
-    print(board)
+    print("\n" + board)
 
 
 def getUsrInput() -> Pattern:
-    print("Available colours are",Colours)
-    usrInp = input("Please enter a sequence of the first letter of each colour in(e.g. rgby): ").lower().replace(" ", "")
+    print("\n- Available colours to guess from are",Colours)
+    usrInp = input("\n- Please enter a sequence of the first letter of each colour in (e.g. rgby): ").lower().replace(" ", "")
     validInp = Pattern.parse(usrInp)
     if validInp is None:
-        print("Invalid input please enter a 4 letter input of the first letter of the available colours","\n",colourLetters)
+        print("\n! Invalid input! Please enter a 4 letter input of the first letter of the available colours","\n",colourLetters)
         return getUsrInput()
     
     return validInp 
@@ -202,6 +202,7 @@ def guessing(code: Pattern)-> bool:
          
         Generateboard(Feedback.giveFeedback(code,guess),guess)
         guesses +=1
+        print("\n- Number of remaining guesses: ", 10-guesses)
     else:    
         return False  
     
@@ -234,62 +235,70 @@ def PVP():
     #      case Continue
     #           continue to next "iteration"
 
-    print("Codebreaker please look away while the codemaker makes a code")
+    print("! Codebreaker please look away while the codemaker sets a code !")
     code = getUsrInput()
+    clearScreen()
+    print("- The code has been set! Good luck guessing, Codebreaker!")
     Play = guessing(code)
 
     if Play == True:
-        print("Congratulations Codbreaker YOU WIN!")
+        print("\n! Congratulations, Codebreaker, YOU WIN !")
 
     elif Play == False:
-        print("Codebreaker you're out of guesses. Codemaker wins")
+        print("\n! You're out of guesses, Codebreaker... CODEMAKER WINS !")
 
 def PVCPU():
     code = random.sample(colourLetters, 4)
-    print("code generated is",code)
+    print("- The code being generated is...", code)
     code = Pattern.parse(code)
-    print("The code has been generated")
+    print("- The code has been generated succesfully!")
     Play = guessing(code)
 
     if Play == True:
-        print("Congratulations Codebreaker YOU WIN!")
+        print("\n! Congratulations, Codebreaker, YOU WIN !")
 
     elif Play == False:
-        print("Codebreaker you're out of guesses. Codemaker wins")
+        print("\n! You're out of guesses, Codebreaker... CPU WINS !")
 
 def Campaign():
     for i, Pattern in enumerate(CampaignCodes):
-        print(f"Level {i + 1}:")
+        print(f"\nLevel {i + 1}:")
         code = CampaignCodes[i]
         Play = guessing(code)
         if not Play:
             break
-        print("Well done you cracked the code. Moving to the next level")
-    print("Congratulations you completed the campaign")
+        print("\n! Well done, Codebreaker, You cracked the code! Moving on to the next level... !")
+    print("\n! Congratulations! You completed the campaign !")
 
 
 # Main is very long - take logic away from main and put into funcs 
 def main():
+    ruleFlag = False
     while True:
         print(welcomeMessage)
+
+        if ruleFlag == False:
+            print(rules)
+            ruleFlag = not ruleFlag 
+
         for game in GameMode:
             print(game.value, "-", game.name)
         # Consider adding a getMenuOption Function - "Sepearte display logic from game logic"
-        menuOption = (input("Please enter a Menu Option: "))
+        menuOption = (input("\nPlease enter a Menu Option: "))
         # USE MATCH CASE INSTEAD OF IFs  
         selection = GameMode.parse(menuOption)
         match selection:
             case GameMode.PVP :
                 clearScreen()
-                print("Player vs Player")
+                print("*** Player vs Player ***\n")
                 PVP()
             case GameMode.PVCPU:
                 clearScreen()
-                print("Plaver Vs CPU")
+                print("*** Plaver Vs CPU ***\n")
                 PVCPU()
             case GameMode.CAMPAIGN:
                 clearScreen()
-                print("Print Campaign")
+                print("*** Campaign Mode ***\n")
                 Campaign()
             case GameMode.QUIT:
                 clearScreen()
