@@ -303,7 +303,6 @@ def main():
                 print("*** Campaign Mode ***\n")
                 Campaign()
             case GameMode.QUIT:
-                clearScreen()
                 break 
             case None : 
                 print("Invalid Menu Option (Please select 1-4)")
