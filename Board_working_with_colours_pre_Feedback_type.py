@@ -2,10 +2,7 @@ from enum import Enum,auto
 import random, os
 from typing import Optional, Final, TypeAlias, ClassVar
 import copy
-
-def clearScreen():
-    os.system('cls')
-    #lollmao
+from dataclasses import dataclass
 
 #Make str that won't be changed immutable using Final (Rules & Menu)
 welcomeMessage: Final[str] = """ Welcome to 
@@ -17,6 +14,8 @@ welcomeMessage: Final[str] = """ Welcome to
         \/     \/     \/            \/            \/        \/      \/ 
         """
         
+def clearScreen():
+    os.system('cls')
 
 rules : Final[str] = """
 1. The game starts with the codemaker creating a code out of a sequence of 4 
@@ -50,6 +49,23 @@ class GameMode(Enum):
             case "3" : return GameMode.CAMPAIGN
             case "4" : return GameMode.QUIT
             case _ : return None 
+
+# I've defined game state this way as there is no associated behaviour with gamestates
+# meaning I don't have to make a Gamestate class with it's own functions
+# instead I can just use a match case satement for each gamestate
+@dataclass(eq=True, frozen=True)
+class CBWin:
+    def __str__(self):
+        return "Codebreaker Wins!"
+@dataclass(eq=True, frozen=True)
+class CMWins:
+    def __str__(self):
+        return "Codemaker Wins!"
+@dataclass(eq=True, frozen=True)
+class NextTurn:
+    def __str__(self):
+        return "Next Turn"
+GameState = TypeAlias = CBWin | CMWins | NextTurn
 
 class Colour(Enum):
     red = "\033[1;31;40mR\033[0;37;40m"
@@ -113,6 +129,35 @@ class Pattern:
             return False
         return(self.first,self.second,self.third,self.fourth) == (value.first,value.second,value.third,value.fourth)
 
+class Feedback(Enum):
+    Black = "Black"
+    White = "White"
+    Null = ""
+    
+    def __str__(self):
+        return self.name
+    
+    @staticmethod
+    def giveFeedback(code: Pattern,guess:Pattern) -> list['Feedback']:
+        feedback = []
+        codeColours = [code.first,code.second,code.third,code.fourth]
+        guessColours = [guess.first,guess.second,guess.third,guess.fourth]
+
+        for i in range(4):
+            if guessColours[i] == codeColours[i]:
+                feedback.append(Feedback.Black)
+                codeColours[i] = guessColours[i] = None
+       
+        for i in range(4):
+            if guessColours[i] is not None and guessColours[i] in codeColours:
+                feedback.append(Feedback.White)
+                codeColours[codeColours.index(guessColours[i])] = None
+        
+        # Pad the list with Null feedback untill we reach the desired length of 4
+        while len(feedback) < 4:
+            feedback.append(Feedback.Null)
+        
+        return feedback
 
 # Predefined Campaign Codes as Pattern Objects
 CampaignCodes = [Pattern(Colour.red,Colour.green,Colour.blue,Colour.yellow),
@@ -122,33 +167,21 @@ CampaignCodes = [Pattern(Colour.red,Colour.green,Colour.blue,Colour.yellow),
 
 # Fuction to output gameboard as game progresses
 # "get it to generate the string and return it, then print out separately" -E.C.
-def Generateboard(feedback : list[str], guess:Pattern) -> str:
+def Generateboard(feedback : list[Feedback], guess:Pattern) -> str:
+    displayFeedback =[]
+    for f in feedback: 
+        displayFeedback.append(str(f))
     board = ""
     board += "Current Board:\n"
-    board += "-" * 150
-    board += f" Guess: {guess} | Feedback: {feedback}\n"
-    board += "-" * 150
+    board += "-" * 100
+    board += "\n"
+    board += f" Guess: {guess} | Feedback: {displayFeedback}\n"
+    board += "-" * 100
     return displayBoard(board)
 
 def displayBoard(board) -> str:
     print(board)
 
-def feedback (code: Pattern, guess:Pattern) -> list[str]:
-    feedback = []
-    codeColours = [code.first,code.second,code.third,code.fourth]
-    guessColours = [guess.first,guess.second,guess.third,guess.fourth]
-        
-    for i in range(4):
-        if guessColours[i] == codeColours[i]:
-            feedback.append("Black")
-            codeColours[i] = guessColours[i] = None
-
-    for i in range(4):
-        if guessColours[i] and guessColours[i] in codeColours:
-            feedback.append("White")
-            codeColours[codeColours.index(guessColours[i])] = None
-    
-    return feedback
 
 def getUsrInput() -> Pattern:
     print("Available colours are",Colours)
@@ -166,19 +199,26 @@ def guessing(code: Pattern)-> bool:
         guess = getUsrInput()
         if guess == code:
             return True
-
-        Generateboard(feedback(code,guess),guess)
+         
+        Generateboard(Feedback.giveFeedback(code,guess),guess)
         guesses +=1
     else:    
         return False  
-# TakeTurn should replace guessing
-#def takeTurn(code : Pattern, turnsLeft:int, board) -> GameState:
-#   
-#   while turnsLeft > 0:
-#
-#        match
-#
-#   turnsLeft -= 1
+    
+# TakeTurn should replace guessing - More maintainable code (allows for diff no. guesses)
+# Recursive call at NextTurn.__str__ or return NextTurn GameState which decrements turnsleft
+def takeTurn(code : Pattern, turnsLeft:int, board) -> GameState:   
+   while turnsLeft > 0:
+    guess = getUsrInput() 
+    match guess:
+        case guess if guess == code:
+            return CBWin.__str__
+        case guess if guess != code:
+            Generateboard(Feedback.giveFeedback(code,guess),guess)
+            NextTurn.__str__
+    turnsLeft -= 1
+    return CMWins.__str__
+
 def PVP():
     # Set up pattern by codemaker
     # Set up mastermind grid -> Need to compelete Gen/Display Board
@@ -195,7 +235,6 @@ def PVP():
     #           continue to next "iteration"
 
     print("Codebreaker please look away while the codemaker makes a code")
-    print("Your code can be comprised of any of the following colours: ",Colours)
     code = getUsrInput()
     Play = guessing(code)
 
@@ -206,14 +245,14 @@ def PVP():
         print("Codebreaker you're out of guesses. Codemaker wins")
 
 def PVCPU():
-    code = [random.choice(colourLetters) for i in range(4)]
+    code = random.sample(colourLetters, 4)
     print("code generated is",code)
     code = Pattern.parse(code)
     print("The code has been generated")
     Play = guessing(code)
 
     if Play == True:
-        print("Congratulations Codbreaker YOU WIN!")
+        print("Congratulations Codebreaker YOU WIN!")
 
     elif Play == False:
         print("Codebreaker you're out of guesses. Codemaker wins")
@@ -256,7 +295,7 @@ def main():
                 clearScreen()
                 break 
             case None : 
-                print("\nInvalid Menu Option (Please select 1-4)")
+                print("Invalid Menu Option (Please select 1-4)")
                 continue
 
 
