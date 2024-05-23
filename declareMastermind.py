@@ -97,8 +97,8 @@ class Pattern:
     size : ClassVar[int] = 4
 
     def __init__(self,first,second,third,fourth):
-        self.first = first
-        self.second = second
+        self.first = first 
+        self.second = second 
         self.third = third
         self.fourth = fourth
     
@@ -110,7 +110,8 @@ class Pattern:
         
         # Use colour parsing function to validate colours in pattern
         # Collect validated colours in a list of Colour Objetcs 
-        colours = [] 
+        colours = []
+        # rgby -> Colour.red, .... 
         for l in s:
             parsed = Colour.parse(l)
             if parsed is None:
@@ -137,6 +138,7 @@ class Feedback(Enum):
     def __str__(self):
         return self.name
     
+    # Test Github
     @staticmethod
     def giveFeedback(code: Pattern,guess:Pattern) -> list['Feedback']:
         feedback = []
