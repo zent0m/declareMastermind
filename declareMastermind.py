@@ -181,7 +181,7 @@ def Generateboard(feedback : list[Feedback], guess:Pattern) -> str:
     board += "\n"
     board += f" Guess: {guess} | Feedback: {displayFeedback}\n"
     board += "-" * 100
-    return displayBoard(board)
+    return board
 
 def displayBoard(board) -> str:
     print("\n" + board)
@@ -204,7 +204,7 @@ def guessing(code: Pattern)-> bool:
         if guess == code:
             return True
          
-        Generateboard(Feedback.giveFeedback(code,guess),guess)
+        displayBoard(Generateboard(Feedback.giveFeedback(code,guess),guess))
         guesses +=1
         print("\n- Number of remaining guesses: ", 10-guesses)
     else:    
