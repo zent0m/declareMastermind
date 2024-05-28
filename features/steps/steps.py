@@ -42,14 +42,14 @@ def step_impl(context):
     context.won_campaign = True
     for code in context.campaign_codes:
         context.code = code
-        context.guess = code  # Simulate correct guesses
+        context.guess = code
         context.won_campaign = context.won_campaign and (context.guess == context.code)
 
 @when('the codebreaker fails a level')
 def step_impl(context):
     context.won_campaign = False
     context.code = context.campaign_codes[0]
-    context.guess = Pattern.parse("bbbb")  # Simulate incorrect guess
+    context.guess = Pattern.parse("bbbb")
 
 @then('the codebreaker should win the campaign')
 def step_impl(context):
