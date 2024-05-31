@@ -1,4 +1,4 @@
-Feature: Mastermind Game
+Feature: Mastermind
 
   Scenario: Codebreaker wins
     Given the codemaker sets the code "rgby"
@@ -28,8 +28,8 @@ Feature: Mastermind Game
 
   Scenario: Provide mixed feedback
     Given the codemaker sets the code "rgby"
-    When the codebreaker guesses "rggy"
-    Then the feedback should be "Black, Black, Black, Null"
+    When the codebreaker guesses "rbgo"
+    Then the feedback should be "Black, White, White, Null"
 
   Scenario: Handle invalid input length
     Given the codemaker sets the code "rgby"
@@ -49,4 +49,4 @@ Feature: Mastermind Game
   Scenario: Campaign mode failure
     Given the campaign mode is started
     When the codebreaker fails a level
-    Then the codemaker should win the campaign
+    Then the codebreaker should lose the campaign

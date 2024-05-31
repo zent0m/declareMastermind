@@ -34,7 +34,7 @@ class TestSuite(unittest.TestCase):
         feedback = Feedback.giveFeedback(code, guess)
         self.assertEqual(feedback, [Feedback.Black, Feedback.Black, Feedback.Black, Feedback.Black])
 
-        # Test feedback with correct colors but some in different positions
+        # Test feedback with correct coloprs but some in different positions
         guess = Pattern(Colour.red, Colour.blue, Colour.green, Colour.yellow)
         feedback = Feedback.giveFeedback(code, guess)
         self.assertEqual(feedback.count(Feedback.Black), 2)
@@ -68,7 +68,7 @@ class TestSuite(unittest.TestCase):
         self.assertIn("Feedback: ['Black', 'White', 'Null', 'Null']", board)
         self.assertIn("Current Board:", board)
 
-    @patch('builtins.input', side_effect=['rgby']) # Mocking user input, correct guess
+    @patch('builtins.input', return_value='rgby') # Mocking user input, correct guess
     def test_correct_guess(self, mock_input):
         # Test if the game is won when a correct guess is made
         code = Pattern(Colour.red, Colour.green, Colour.blue, Colour.yellow)

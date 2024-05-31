@@ -2,6 +2,7 @@ from enum import Enum,auto
 import random, os
 from typing import Optional, Final, TypeAlias, ClassVar
 import copy
+import sys
 from dataclasses import dataclass
 
 #Make str that won't be changed immutable using Final (Rules & Menu)
@@ -35,12 +36,12 @@ colourLetters = ("r","g","b","y","o","p","i","v")
 
 # Gamemodes 
 class GameMode(Enum):
+
     PVP = 1
     PVCPU = 2
     CAMPAIGN = 3
     QUIT = 4
     
-
     @staticmethod
     def parse (s:str) -> Optional['GameMode']:
         match s:
@@ -65,7 +66,7 @@ class CMWins:
 class NextTurn:
     def __str__(self):
         return "Next Turn"
-GameState = TypeAlias = CBWin | CMWins | NextTurn
+GameState : TypeAlias = CBWin | CMWins | NextTurn
 
 class Colour(Enum):
     red = "\033[1;31;40mR\033[0;37;40m"
@@ -103,23 +104,13 @@ class Pattern:
         self.fourth = fourth
     
     @staticmethod
-    # This previously took s as a list of strings s e.g. rbgy
     def parse(s:str) -> Optional['Pattern']:
         if len(s)!=Pattern.size:
             return None 
         
-        # Use colour parsing function to validate colours in pattern
-        # Collect validated colours in a list of Colour Objetcs 
-        colours = []
-        # rgby -> Colour.red, .... 
-        for l in s:
-            parsed = Colour.parse(l)
-            if parsed is None:
-                return None
-            colours.append(parsed)
-                
-        
-        #return a new Pattern object consisting of 4 Colour objects 
+        colours = list(map(Colour.parse,s))
+        if None in colours:
+            return None      
         return Pattern(colours[0],colours[1],colours[2],colours[3])
         
     def __str__(self) -> str:
@@ -164,10 +155,10 @@ class Feedback(Enum):
 
 
 # Predefined Campaign Codes as Pattern Objects
-CampaignCodes = [Pattern(Colour.red,Colour.green,Colour.blue,Colour.yellow),
+CampaignCodes = (Pattern(Colour.red,Colour.green,Colour.blue,Colour.yellow),
                 Pattern(Colour.orange,Colour.purple,Colour.blue,Colour.violet),
                 Pattern(Colour.blue,Colour.indigo,Colour.purple,Colour.green),
-                Pattern(Colour.purple,Colour.indigo,Colour.green,Colour.yellow)]
+                Pattern(Colour.purple,Colour.indigo,Colour.green,Colour.yellow))
 
 # Fuction to output gameboard as game progresses
 # "get it to generate the string and return it, then print out separately" -E.C.
@@ -183,9 +174,6 @@ def Generateboard(feedback : list[Feedback], guess:Pattern) -> str:
     board += "-" * 100
     return board
 
-def displayBoard(board) -> str:
-    print("\n" + board)
-
 
 def getUsrInput() -> Pattern:
     print("\n- Available colours to guess from are",Colours)
@@ -194,7 +182,6 @@ def getUsrInput() -> Pattern:
     if validInp is None:
         print("\n! Invalid input! Please enter a 4 letter input of the first letter of the available colours","\n",colourLetters)
         return getUsrInput()
-    
     return validInp 
 
 def guessing(code: Pattern)-> bool:
@@ -204,7 +191,8 @@ def guessing(code: Pattern)-> bool:
         if guess == code:
             return True
          
-        displayBoard(Generateboard(Feedback.giveFeedback(code,guess),guess))
+        board = Generateboard(Feedback.giveFeedback(code,guess),guess)
+        print("\n" + board)
         guesses +=1
         print("\n- Number of remaining guesses: ", 10-guesses)
     else:    
@@ -212,84 +200,66 @@ def guessing(code: Pattern)-> bool:
     
 # TakeTurn should replace guessing - More maintainable code (allows for diff no. guesses)
 # Recursive call at NextTurn.__str__ or return NextTurn GameState which decrements turnsleft
-def takeTurn(code : Pattern, turnsLeft:int, board) -> GameState:   
-   while turnsLeft > 0:
+def takeTurn(code : Pattern, turnsLeft:int) -> GameState:   
+    if turnsLeft <=0:
+        return CMWins()
+   
     guess = getUsrInput() 
-    match guess:
-        case guess if guess == code:
-            return CBWin.__str__
-        case guess if guess != code:
-            Generateboard(Feedback.giveFeedback(code,guess),guess)
-            NextTurn.__str__
-    turnsLeft -= 1
-    return CMWins.__str__
+    if guess == code:
+        return CBWin()
+    else:
+        print(Generateboard(Feedback.giveFeedback(code,guess),guess))
+        print(f"Turns left: {turnsLeft - 1}")
+        return takeTurn(code,turnsLeft-1)
 
 def PVP():
-    # Set up pattern by codemaker
-    # Set up mastermind grid -> Need to compelete Gen/Display Board
-    # Repeatedly (descending from 10)
-    #      call take_turn_cb : Pattern X TurnsLeft X MasterMindGrid -> PlayState
-    #      on result from call
-    #      case WinCB
-    #           print out message
-    #           return from procedure
-    #      case WinCM
-    #           print out message
-    #           return from procedure
-    #      case Continue
-    #           continue to next "iteration"
-
     print("! Codebreaker please look away while the codemaker sets a code !")
     code = getUsrInput()
     clearScreen()
     print("- The code has been set! Good luck guessing, Codebreaker!")
-    Play = guessing(code)
-
-    if Play == True:
-        print("\n! Congratulations, Codebreaker, YOU WIN !")
-
-    elif Play == False:
-        print("\n! You're out of guesses, Codebreaker... CODEMAKER WINS !")
+    Play = takeTurn(code,10)
+    match Play:
+        case CBWin():
+            print(CBWin())
+        case CMWins():
+            print(CMWins())
 
 def PVCPU():
     code = random.sample(colourLetters, 4)
-    print("- The code being generated is...", code)
     code = Pattern.parse(code)
     print("- The code has been generated succesfully!")
-    Play = guessing(code)
+    Play = takeTurn(code,10)
+    match Play:
+        case CBWin():
+            print(CBWin())
+        case CMWins():
+            print(CMWins())
 
-    if Play == True:
-        print("\n! Congratulations, Codebreaker, YOU WIN !")
-
-    elif Play == False:
-        print("\n! You're out of guesses, Codebreaker... CPU WINS !")
 
 def Campaign():
     for i, Pattern in enumerate(CampaignCodes):
         print(f"\nLevel {i + 1}:")
         code = CampaignCodes[i]
-        Play = guessing(code)
-        if not Play:
-            break
-        print("\n! Well done, Codebreaker, You cracked the code! Moving on to the next level... !")
-    print("\n! Congratulations! You completed the campaign !")
+        Play = takeTurn(code,10)
+        match Play:
+            case CBWin():
+                print(CBWin())
+            case CMWins():
+                print(CMWins())
+                break
+    else:
+        print("\n! Congratulations! You completed the campaign !")
 
-
-# Main is very long - take logic away from main and put into funcs 
 def main():
     ruleFlag = False
     while True:
         print(welcomeMessage)
-
         if ruleFlag == False:
             print(rules)
             ruleFlag = not ruleFlag 
-
         for game in GameMode:
             print(game.value, "-", game.name)
-        # Consider adding a getMenuOption Function - "Sepearte display logic from game logic"
-        menuOption = (input("\nPlease enter a Menu Option: "))
-        # USE MATCH CASE INSTEAD OF IFs  
+        menuOption = (input("\nPlease enter a Menu Option: "))  
         selection = GameMode.parse(menuOption)
         match selection:
             case GameMode.PVP :
